@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IExRetail — Equipment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: #e2e0d8;
+    --text: #1a1917;
+    --text2: #6b6960;
+    --text3: #9b9a94;
+    --accent: #1c4f82;
+    --accent-light: #e8f0f9;
+    --good: #166534; --good-bg: #dcfce7;
+    --fair: #854d0e; --fair-bg: #fef9c3;
+    --faulty: #991b1b; --faulty-bg: #fee2e2;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  /* TOP BAR */
+  .topbar { background: var(--accent); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+  .topbar-brand svg { opacity: 0.9; }
+  .topbar-sub { color: rgba(255,255,255,0.55); font-size: 12px; font-weight: 400; }
+
+  /* MAIN */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.75rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .stat-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; color: var(--text); }
+  .stat-card.good .stat-value { color: var(--good); }
+  .stat-card.fair .stat-value { color: var(--fair); }
+  .stat-card.faulty .stat-value { color: var(--faulty); }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 1.25rem; align-items: center; flex-wrap: wrap; }
+  .search-wrap { position: relative; flex: 1; min-width: 200px; }
+  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); pointer-events: none; }
+  .search-wrap input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: var(--font); font-size: 13px; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .search-wrap input:focus { border-color: var(--accent); }
+  select { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: var(--font); font-size: 13px; color: var(--text); outline: none; cursor: pointer; }
+  select:focus { border-color: var(--accent); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--radius-sm); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); transition: background 0.15s; white-space: nowrap; }
+  .btn:hover { background: var(--surface2); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #1a4570; border-color: #1a4570; }
+
+  /* TABLE */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--surface2); border-bottom: 1px solid var(--border); }
+  thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text3); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafaf8; }
+  tbody td { padding: 12px 14px; color: var(--text); vertical-align: middle; }
+  .td-name { font-weight: 500; }
+  .td-serial { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+  .td-muted { color: var(--text2); }
+  .td-actions { display: flex; gap: 4px; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .badge-good { background: var(--good-bg); color: var(--good); }
+  .badge-fair { background: var(--fair-bg); color: var(--fair); }
+  .badge-faulty { background: var(--faulty-bg); color: var(--faulty); }
+
+  /* ICON BUTTONS */
+  .icon-btn { background: none; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 5px; cursor: pointer; color: var(--text3); display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .icon-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+  .icon-btn.danger:hover { background: var(--faulty-bg); color: var(--faulty); border-color: #fca5a5; }
+
+  /* EMPTY */
+  .empty { padding: 3rem; text-align: center; color: var(--text3); }
+  .empty svg { margin: 0 auto 12px; display: block; opacity: 0.4; }
+  .empty p { font-size: 14px; }
+
+  /* MODAL */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); width: 540px; max-width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .modal-header { padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h3 { font-size: 15px; font-weight: 600; }
+  .modal-body { padding: 1.25rem 1.5rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 500; color: var(--text2); }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 13px; color: var(--text); background: var(--surface);
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* NO. COL */
+  .td-no { color: var(--text3); font-variant-numeric: tabular-nums; font-size: 12px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .topbar { padding: 0 1rem; }
+    .main { padding: 1.25rem 1rem 3rem; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 9px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    IExRetail
+    <span class="topbar-sub">Equipment Tracker</span>
+  </div>
+  <div style="color:rgba(255,255,255,0.6);font-size:12px;" id="topDate"></div>
+</div>
+
+<div class="main">
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Search item, model, serial, location…" oninput="render()" />
+    </div>
+    <select id="filterCondition" onchange="render()">
+      <option value="">All conditions</option>
+      <option value="Good">Good</option>
+      <option value="Fair">Fair</option>
+      <option value="Faulty">Faulty</option>
+    </select>
+    <button class="btn btn-primary" onclick="openAdd()">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add item
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:42px">No.</th>
+          <th>Item name</th>
+          <th>Brand / model</th>
+          <th>Serial number</th>
+          <th>Purchase date</th>
+          <th>Warranty expiry</th>
+          <th>Location / usage</th>
+          <th>Condition</th>
+          <th>Last service</th>
+          <th>Remarks</th>
+          <th style="width:72px"></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add new item</h3>
+      <button class="icon-btn" onclick="closeModal()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Item name *</label><input id="f-name" placeholder="e.g. Desktop PC" /></div>
+        <div class="form-group"><label>Brand / model</label><input id="f-model" placeholder="e.g. HP EliteDesk 800" /></div>
+        <div class="form-group"><label>Serial number</label><input id="f-serial" placeholder="e.g. SN-12345" /></div>
+        <div class="form-group"><label>Condition</label>
+          <select id="f-condition">
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Faulty">Faulty</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Purchase date</label><input id="f-purchase" type="date" /></div>
+        <div class="form-group"><label>Warranty expiry</label><input id="f-warranty" type="date" /></div>
+        <div class="form-group full"><label>Location / usage</label><input id="f-location" placeholder="e.g. Cashier Counter / POS System" /></div>
+        <div class="form-group"><label>Last service date</label><input id="f-service" type="date" /></div>
+        <div class="form-group full"><label>Remarks</label><textarea id="f-remarks" placeholder="Any notes about this item…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">Save item</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Set date in topbar
+  document.getElementById("topDate").textContent = new Date().toLocaleDateString("en-MY", { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+
+  const STORAGE_KEY = "iexretail_equipment";
+
+  let items = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [
+    { id:1, name:"Desktop PC", model:"HP EliteDesk 800", serial:"SN-HP8001", purchase:"2022-01-01", warranty:"2025-01-01", location:"Cashier Counter / POS", condition:"Good", service:"2024-03-15", remarks:"Main POS system" },
+    { id:2, name:"Printer", model:"Epson L3210", serial:"SN-EP3210", purchase:"2022-06-10", warranty:"2024-06-10", location:"Counter Area", condition:"Good", service:"", remarks:"Receipt & label printer" },
+    { id:3, name:"Mobile Phone", model:"Samsung Galaxy A54", serial:"SN-SGA54", purchase:"2023-03-20", warranty:"2025-03-20", location:"Staff Use", condition:"Fair", service:"", remarks:"Used by cashier staff" },
+    { id:4, name:"WiFi Router", model:"TP-Link Archer AX55", serial:"SN-TP001", purchase:"2021-11-05", warranty:"2023-11-05", location:"Office / Back Room", condition:"Good", service:"2023-08-01", remarks:"Main internet router" },
+    { id:5, name:"CCTV Camera", model:"Hikvision DS-2CD", serial:"SN-HK004", purchase:"2020-07-15", warranty:"2022-07-15", location:"Shop Entrance", condition:"Faulty", service:"2023-01-10", remarks:"Needs lens replacement" },
+  ];
+  let nextId = items.length ? Math.max(...items.map(i=>i.id)) + 1 : 1;
+  let editingId = null;
+
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
+
+  function fmt(d) {
+    if (!d) return "—";
+    const [y,m,dy] = d.split("-");
+    return `${dy}/${m}/${y}`;
+  }
+
+  function badgeClass(c) {
+    return c === "Good" ? "badge-good" : c === "Fair" ? "badge-fair" : "badge-faulty";
+  }
+
+  function render() {
+    const q = document.getElementById("search").value.toLowerCase();
+    const cf = document.getElementById("filterCondition").value;
+    const filtered = items.filter(i => {
+      const match = !q || [i.name,i.model,i.serial,i.location,i.remarks].some(v=>v&&v.toLowerCase().includes(q));
+      const cond = !cf || i.condition === cf;
+      return match && cond;
+    });
+
+    const body = document.getElementById("tableBody");
+    if (filtered.length === 0) {
+      body.innerHTML = `<tr><td colspan="11"><div class="empty">
+        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <p>No items found. Try a different search or filter.</p>
+      </div></td></tr>`;
+    } else {
+      body.innerHTML = filtered.map((item, idx) => `
+        <tr>
+          <td class="td-no">${idx + 1}</td>
+          <td class="td-name">${item.name}</td>
+          <td class="td-muted">${item.model || "—"}</td>
+          <td class="td-serial">${item.serial || "—"}</td>
+          <td class="td-muted">${fmt(item.purchase)}</td>
+          <td class="td-muted">${fmt(item.warranty)}</td>
+          <td class="td-muted">${item.location || "—"}</td>
+          <td><span class="badge ${badgeClass(item.condition)}">${item.condition}</span></td>
+          <td class="td-muted">${fmt(item.service)}</td>
+          <td class="td-muted" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${item.remarks||''}">${item.remarks || "—"}</td>
+          <td>
+            <div class="td-actions">
+              <button class="icon-btn" onclick="editItem(${item.id})" title="Edit">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="icon-btn danger" onclick="deleteItem(${item.id})" title="Delete">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // Stats
+    const total = items.length;
+    const good = items.filter(i=>i.condition==="Good").length;
+    const fair = items.filter(i=>i.condition==="Fair").length;
+    const faulty = items.filter(i=>i.condition==="Faulty").length;
+    document.getElementById("statsRow").innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total items</div><div class="stat-value">${total}</div></div>
+      <div class="stat-card good"><div class="stat-label">Good</div><div class="stat-value">${good}</div></div>
+      <div class="stat-card fair"><div class="stat-label">Fair</div><div class="stat-value">${fair}</div></div>
+      <div class="stat-card faulty"><div class="stat-label">Faulty</div><div class="stat-value">${faulty}</div></div>
+    `;
+  }
+
+  function openAdd() {
+    editingId = null;
+    document.getElementById("modalTitle").textContent = "Add new item";
+    ["name","model","serial","purchase","warranty","location","service","remarks"].forEach(f => document.getElementById("f-"+f).value = "");
+    document.getElementById("f-condition").value = "Good";
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function editItem(id) {
+    editingId = id;
+    const item = items.find(i => i.id === id);
+    document.getElementById("modalTitle").textContent = "Edit item";
+    document.getElementById("f-name").value = item.name || "";
+    document.getElementById("f-model").value = item.model || "";
+    document.getElementById("f-serial").value = item.serial || "";
+    document.getElementById("f-purchase").value = item.purchase || "";
+    document.getElementById("f-warranty").value = item.warranty || "";
+    document.getElementById("f-location").value = item.location || "";
+    document.getElementById("f-condition").value = item.condition || "Good";
+    document.getElementById("f-service").value = item.service || "";
+    document.getElementById("f-remarks").value = item.remarks || "";
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function saveItem() {
+    const name = document.getElementById("f-name").value.trim();
+    if (!name) { alert("Please enter an item name."); return; }
+    const data = {
+      name,
+      model: document.getElementById("f-model").value.trim(),
+      serial: document.getElementById("f-serial").value.trim(),
+      purchase: document.getElementById("f-purchase").value,
+      warranty: document.getElementById("f-warranty").value,
+      location: document.getElementById("f-location").value.trim(),
+      condition: document.getElementById("f-condition").value,
+      service: document.getElementById("f-service").value,
+      remarks: document.getElementById("f-remarks").value.trim()
+    };
+    if (editingId) {
+      const idx = items.findIndex(i => i.id === editingId);
+      items[idx] = { ...items[idx], ...data };
+    } else {
+      items.push({ id: nextId++, ...data });
+    }
+    save();
+    closeModal();
+    render();
+  }
+
+  function deleteItem(id) {
+    if (confirm("Delete this item? This cannot be undone.")) {
+      items = items.filter(i => i.id !== id);
+      save();
+      render();
+    }
+  }
+
+  function closeModal() { document.getElementById("overlay").classList.remove("open"); }
+  function overlayClick(e) { if (e.target === document.getElementById("overlay")) closeModal(); }
+
+  render();
+</script>
+</body>
+</html>
